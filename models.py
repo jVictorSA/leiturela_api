@@ -6,6 +6,11 @@ from bson import ObjectId
 
 PyObjectId = Annotated[str, BeforeValidator(str)]
 
+class Atividade(BaseModel):
+    atividade_id: str
+    answer: str
+    body: dict
+
 class Story(BaseModel):
     story_id: int
     story_prompt: str
