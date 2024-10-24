@@ -14,5 +14,5 @@ MONGO_DB = "stories_db"
 
 # Create a MongoDB client
 client = MongoClient(
-	f"mongodb://{MONGO_USERNAME}:{MONGO_PASSWORD}@{MONGO_HOST}:{MONGO_PORT}/{MONGO_DB}")
+	f"mongodb+srv://pedro:pedro@cluster0.qsjhcms.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
 db = client[MONGO_DB]

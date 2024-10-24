@@ -1,6 +1,9 @@
-from fastapi import FastAPI, HTTPException, Body, status
+from fastapi import FastAPI, HTTPException, Body, status, Header
 from typing import Union, Any, List
 import os, json
+from pydantic import BaseModel
+from auth_utils import get_password_hash, verify_password, create_access_token, decode_token
+from datetime import datetime
 
 # from fastapi.responses import 
 from fastapi.encoders import jsonable_encoder
@@ -122,3 +125,64 @@ async def delete_student(story_id: int):
         return Response(status_code=status.HTTP_204_NO_CONTENT)
 
     raise HTTPException(status_code=404, detail=f"Story {story_id} not found")
+
+### USER ROUTES
+class CreateUser(BaseModel):
+    email: str
+    password: str
+
+@app.post(
+    "/register",
+)
+async def create_user(user: CreateUser):
+    existing_user = db.user.find_one({"email": user.email})
+    if existing_user:
+        raise HTTPException(status_code=400, detail="User already exists")
+    
+    encripted_password = get_password_hash(user.password)
+    db.user.insert_one({"email": user.email, "password": encripted_password})
+    return {"message": "User created successfully"}
+
+class LoginUser(BaseModel):
+    email: str
+    password: str
+
+@app.post("/login")
+async def long(user: LoginUser):
+    existing_user = db.user.find_one({"email": user.email})
+    if not existing_user:
+        raise HTTPException(status_code=400, detail="User not found")
+    
+    if not verify_password(user.password, existing_user["password"]):
+        raise HTTPException(status_code=400, detail="Invalid password")
+    
+    access_token = create_access_token(data={"id": str(existing_user["_id"])})
+    return {"access_token": access_token}
+
+@app.get("/protected")
+async def protected_route(token: str = Header(...)):
+    payload = decode_token(token)
+    return {"message": "Protected route accessed successfully", "payload": payload}
+
+@app.post("/entrega")
+async def entrega(token: str = Header(...), atividade_id: str = Body(...), answer: str = Body(...)):
+    payload = decode_token(token)
+    atividade = db.atividade.find_one({"atividade_id": atividade_id})
+    correta = atividade["answer"] == answer
+    new_entrega = {
+        "atividade_id": atividade_id,
+        "answer": answer,
+        "correta": correta,
+        "date": datetime.now()
+    }
+    db.entrega.insert_one(new_entrega)
+    return {"message": "Entrega realizada com sucesso", "payload": payload, "story_id": story_id, "answer": answer}
+
+class Atividade(BaseModel):
+    answer: dict
+    body: dict
+
+@app.post("/atividade")
+async def atividade(atividade: Atividade = Body(...)):
+    nova_atividade = db.atividade.insert_one(atividade.dict())
+    return {"message": "Atividade criada com sucesso", "id": str(nova_atividade.inserted_id)}
