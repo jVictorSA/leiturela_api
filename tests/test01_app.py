@@ -9,7 +9,6 @@ client = TestClient(app)
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 # Testes para o endpoint / register e login
 
-
 def test_register_user():
     response = client.post("/register", json={"email": "test4@example.com", "password": "securepassword"})
     assert response.status_code == 200
