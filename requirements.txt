@@ -61,7 +61,6 @@ typing_extensions==4.12.2
 uritemplate==4.1.1
 urllib3==2.2.3
 uvicorn==0.32.0
-uvloop==0.21.0
 watchfiles==0.24.0
 websockets==13.1
 annotated-types==0.7.0
@@ -132,6 +131,6 @@ typing_extensions==4.12.2
 uritemplate==4.1.1
 urllib3==2.2.3
 uvicorn==0.32.0
-uvloop==0.21.0
+# uvloop==0.21.0 #comentado porque não roda no windows 
 watchfiles==0.24.0
 websockets==13.1
