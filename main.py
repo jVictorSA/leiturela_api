@@ -65,7 +65,7 @@ async def generate_story(story_prompt:str):
     existing_story = db.story.find_one({"story_prompt": story_prompt})
     if existing_story:
         raise HTTPException(
-            status_code=404, detail="História já existe no banco!!!"
+            status_code=400, detail="História já existe no banco!!!"
         )
  
     story_id = db.story.count_documents({}) + 1
@@ -77,10 +77,10 @@ async def generate_story(story_prompt:str):
     inserted_story = str(inserted_story['story_prompt'])
     content_response = {"message": f"Story with prompt '{inserted_story}' has been created."}
     return JSONResponse(
-                    content=content_response,
-                    status_code=status.HTTP_201_CREATED,
-                    media_type="application/json"
-                )
+        content=content_response,
+        status_code=status.HTTP_201_CREATED,
+        media_type="application/json"
+    )
 
 
 @app.put(
