@@ -200,6 +200,7 @@ async def atividade(atividade: Atividade = Body(...)):
     nova_atividade = db.atividade.insert_one(atividade.dict())
     return {"message": "Atividade criada com sucesso", "id": str(nova_atividade.inserted_id)}
 
+
 class AtividadeID(BaseModel):
     atividade_id: str
 
