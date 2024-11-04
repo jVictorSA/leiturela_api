@@ -160,6 +160,7 @@ async def login(user: LoginUser):
     access_token = create_access_token(data={"id": str(existing_user["_id"])})
     return {"access_token": access_token}
 
+
 @app.get("/profile")
 async def profile(authorization: str = Header(...)):
     token = authorization
