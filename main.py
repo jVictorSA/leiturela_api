@@ -4,6 +4,7 @@ import os, json
 from pydantic import BaseModel
 from auth_utils import get_password_hash, verify_password, create_access_token, decode_token
 from datetime import datetime
+from bson import ObjectId
 
 # from fastapi.responses import 
 from fastapi.encoders import jsonable_encoder
@@ -65,7 +66,7 @@ async def generate_story(story_prompt:str):
     existing_story = db.story.find_one({"story_prompt": story_prompt})
     if existing_story:
         raise HTTPException(
-            status_code=400, detail="História já existe no banco!!!"
+            status_code=404, detail="História já existe no banco!!!"
         )
  
     story_id = db.story.count_documents({}) + 1
@@ -77,10 +78,10 @@ async def generate_story(story_prompt:str):
     inserted_story = str(inserted_story['story_prompt'])
     content_response = {"message": f"Story with prompt '{inserted_story}' has been created."}
     return JSONResponse(
-        content=content_response,
-        status_code=status.HTTP_201_CREATED,
-        media_type="application/json"
-    )
+                    content=content_response,
+                    status_code=status.HTTP_201_CREATED,
+                    media_type="application/json"
+                )
 
 
 @app.put(
@@ -148,7 +149,7 @@ class LoginUser(BaseModel):
     password: str
 
 @app.post("/login")
-async def long(user: LoginUser):
+async def login(user: LoginUser):
     existing_user = db.user.find_one({"email": user.email})
     if not existing_user:
         raise HTTPException(status_code=400, detail="User not found")
@@ -159,26 +160,37 @@ async def long(user: LoginUser):
     access_token = create_access_token(data={"id": str(existing_user["_id"])})
     return {"access_token": access_token}
 
-@app.get("/protected")
-async def protected_route(token: str = Header(...)):
+@app.get("/profile")
+async def profile(authorization: str = Header(...)):
+    token = authorization
     payload = decode_token(token)
-    return {"message": "Protected route accessed successfully", "payload": payload}
+    return {"user_id": payload["id"]}
+
 
 @app.post("/entrega")
-async def entrega(token: str = Header(...), atividade_id: str = Body(...), answer: str = Body(...)):
+async def entrega(authorization: str = Header(...), atividade_id: str = Body(...), answer: dict = Body(...)):
+    token = authorization 
     payload = decode_token(token)
-    atividade = db.atividade.find_one({"atividade_id": atividade_id})
+
+    try:
+        atividade_obj_id = ObjectId(atividade_id)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail="Invalid atividade_id format")
+    atividade = db.atividade.find_one({'_id': atividade_obj_id})
     correta = atividade["answer"] == answer
+    # colocar o id do usuário pelo payload do jwt
     new_entrega = {
         "atividade_id": atividade_id,
         "answer": answer,
         "correta": correta,
-        "date": datetime.now()
+        "date": datetime.now(),
+        "user_id": payload["id"]
     }
     db.entrega.insert_one(new_entrega)
-    return {"message": "Entrega realizada com sucesso", "payload": payload, "story_id": story_id, "answer": answer}
+    return {"message": "Entrega realizada com sucesso", "payload": payload, "atividade_id": atividade_id, "answer": answer}
 
 class Atividade(BaseModel):
+    type: str
     answer: dict
     body: dict
 
@@ -186,3 +198,20 @@ class Atividade(BaseModel):
 async def atividade(atividade: Atividade = Body(...)):
     nova_atividade = db.atividade.insert_one(atividade.dict())
     return {"message": "Atividade criada com sucesso", "id": str(nova_atividade.inserted_id)}
+
+class AtividadeID(BaseModel):
+    atividade_id: str
+
+@app.get("/atividade")
+async def get_atividade(atividade_id: AtividadeID = Body(...)):
+    try:
+        atividade_obj_id = ObjectId(atividade_id.atividade_id)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail="Invalid atividade_id format")
+    
+    atividade = db.atividade.find_one({'_id': atividade_obj_id})
+    if not atividade:
+        raise HTTPException(status_code=404, detail="Atividade not found")
+    
+    atividade['_id'] = str(atividade['_id'])
+    return atividade
