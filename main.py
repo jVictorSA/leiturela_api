@@ -14,6 +14,7 @@ from story_generation import generate_stories, generate_story_chunks, story_to_d
 from mongo_conn import db
 from models import Story, UpdateStoryModel
 from pymongo import ReturnDocument
+from datetime import timedelta
 
 app = FastAPI() 
 
@@ -167,9 +168,21 @@ async def profile(authorization: str = Header(...)):
     payload = decode_token(token)
     return {"user_id": payload["id"]}
 
+@app.get("/relatorio")
+async def relatorio(authorization: str = Header(...)):
+    token = authorization
+    payload = decode_token(token)
+    user_id = payload["id"]
+    #filtrar por a data de nao mais antiga que uma semana
+
+    entregas = list(db.entrega.find({"user_id": user_id, "date": {"$gte": datetime.now() - timedelta(days=7)}}))
+    # retornar a soma do tempo de cada entrega
+    total_time = sum([entrega["time"] for entrega in entregas])
+    return entregas
+
 
 @app.post("/entrega")
-async def entrega(authorization: str = Header(...), atividade_id: str = Body(...), answer: dict = Body(...)):
+async def entrega(authorization: str = Header(...), atividade_id: str = Body(...), answer: dict = Body(...), time: float = Body(...)):
     token = authorization 
     payload = decode_token(token)
 
@@ -185,7 +198,8 @@ async def entrega(authorization: str = Header(...), atividade_id: str = Body(...
         "answer": answer,
         "correta": correta,
         "date": datetime.now(),
-        "user_id": payload["id"]
+        "user_id": payload["id"],
+        "time": time
     }
     db.entrega.insert_one(new_entrega)
     return {"message": "Entrega realizada com sucesso", "payload": payload, "atividade_id": atividade_id, "answer": answer}
