@@ -4,7 +4,6 @@ from passlib.context import CryptContext
 from datetime import datetime, timedelta
 import jwt
 from typing import Dict, Optional
-from jwt.exceptions import PyJWTError
 
 # Configurações
 SECRET_KEY = "sua_chave_secreta_aqui"  # Mude isso para uma chave secreta forte

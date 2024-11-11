@@ -16,6 +16,10 @@ from models import Story, UpdateStoryModel
 from pymongo import ReturnDocument
 from datetime import timedelta
 
+from routers.user_routes import router as user_router
+from routers.atividades_routes import router as atividades_router
+from routers.dev_routes import router as dev_router
+
 app = FastAPI() 
 
 @app.get(
@@ -128,107 +132,5 @@ async def delete_student(story_id: int):
 
     raise HTTPException(status_code=404, detail=f"Story {story_id} not found")
 
-### USER ROUTES
-class CreateUser(BaseModel):
-    email: str
-    password: str
-
-@app.post(
-    "/register",
-)
-async def create_user(user: CreateUser):
-    existing_user = db.user.find_one({"email": user.email})
-    if existing_user:
-        raise HTTPException(status_code=400, detail="User already exists")
-    
-    encripted_password = get_password_hash(user.password)
-    db.user.insert_one({"email": user.email, "password": encripted_password})
-    return {"message": "User created successfully"}
-
-class LoginUser(BaseModel):
-    email: str
-    password: str
-
-@app.post("/login")
-async def login(user: LoginUser):
-    existing_user = db.user.find_one({"email": user.email})
-    if not existing_user:
-        raise HTTPException(status_code=400, detail="User not found")
-    
-    if not verify_password(user.password, existing_user["password"]):
-        raise HTTPException(status_code=400, detail="Invalid password")
-    
-    access_token = create_access_token(data={"id": str(existing_user["_id"])})
-    return {"access_token": access_token}
-
-
-@app.get("/profile")
-async def profile(authorization: str = Header(...)):
-    token = authorization
-    payload = decode_token(token)
-    return {"user_id": payload["id"]}
-
-@app.get("/relatorio")
-async def relatorio(authorization: str = Header(...)):
-    token = authorization
-    payload = decode_token(token)
-    user_id = payload["id"]
-    # filtrar por a data de nao mais antiga que uma semana
-    entregas = list(db.entrega.find({"user_id": user_id, "date": {"$gte": datetime.now() - timedelta(days=7)}}))
-    # retornar a soma do tempo de cada entrega
-    total_time = sum([entrega["time"] for entrega in entregas])
-    # contar o número de acertos
-    num_acertos = sum([1 for entrega in entregas if entrega["correta"]])
-    return {"entregas": entregas, "total_time": total_time, "num_acertos": num_acertos}
-
-
-@app.post("/entrega")
-async def entrega(authorization: str = Header(...), atividade_id: str = Body(...), answer: dict = Body(...), time: float = Body(...)):
-    token = authorization 
-    payload = decode_token(token)
-
-    try:
-        atividade_obj_id = ObjectId(atividade_id)
-    except Exception as e:
-        raise HTTPException(status_code=400, detail="Invalid atividade_id format")
-    atividade = db.atividade.find_one({'_id': atividade_obj_id})
-    correta = atividade["answer"] == answer
-    # colocar o id do usuário pelo payload do jwt
-    new_entrega = {
-        "atividade_id": atividade_id,
-        "answer": answer,
-        "correta": correta,
-        "date": datetime.now(),
-        "user_id": payload["id"],
-        "time": time
-    }
-    db.entrega.insert_one(new_entrega)
-    return {"message": "Entrega realizada com sucesso", "payload": payload, "atividade_id": atividade_id, "answer": answer}
-
-class Atividade(BaseModel):
-    type: str
-    answer: dict
-    body: dict
-
-@app.post("/atividade")
-async def atividade(atividade: Atividade = Body(...)):
-    nova_atividade = db.atividade.insert_one(atividade.dict())
-    return {"message": "Atividade criada com sucesso", "id": str(nova_atividade.inserted_id)}
-
-
-class AtividadeID(BaseModel):
-    atividade_id: str
-
-@app.get("/atividade")
-async def get_atividade(atividade_id: AtividadeID = Body(...)):
-    try:
-        atividade_obj_id = ObjectId(atividade_id.atividade_id)
-    except Exception as e:
-        raise HTTPException(status_code=400, detail="Invalid atividade_id format")
-    
-    atividade = db.atividade.find_one({'_id': atividade_obj_id})
-    if not atividade:
-        raise HTTPException(status_code=404, detail="Atividade not found")
-    
-    atividade['_id'] = str(atividade['_id'])
-    return atividade
+app.include_router(user_router, prefix="/user", tags=["user"])
+app.include_router(atividades_router, prefix="/atividade", tags=["atividades"])
