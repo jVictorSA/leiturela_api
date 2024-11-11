@@ -55,15 +55,7 @@ async def entrega(authorization: str = Header(...), entrega: EntregaPost = Body(
         "answer": entrega.answer
     }
 
-class AtividadePost(BaseModel):
-    type: str
-    answer: dict
-    body: dict
 
-@router.post("/atividade")
-async def atividade(atividade: AtividadePost = Body(...)):
-    nova_atividade = db.atividade.insert_one(atividade.dict())
-    return {"message": "Atividade criada com sucesso", "id": str(nova_atividade.inserted_id)}
 
 
 class AtividadeGet(BaseModel):
