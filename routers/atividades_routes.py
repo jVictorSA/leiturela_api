@@ -135,3 +135,12 @@ async def get_story(story_id: str, authorization: str = Header(None)):
         activities.append(activity)
     story["activities"] = activities
     return story
+
+@router.get("/stories")
+async def get_stories():
+    # List all the stories data in the database.
+    stories = list(db.stories.find({}))
+    for story in stories:
+        story["_id"] = str(story["_id"])
+
+    return stories

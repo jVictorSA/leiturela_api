@@ -95,53 +95,9 @@ async def generate_story(story_prompt:str):
                     media_type="application/json"
                 )
 
-
-@app.put(
-    "/stories/{story_id}",
-    response_description="Update a Story in the database"
-)
-async def update_story(story_id: int, story: UpdateStoryModel = Body(...)):
-    """
-    Update a single Story record from the database.
-    """
-    story = {
-        k: v for k,v in story.model_dump(by_alias=True).items() if v is not None
-    }
-    
-    if len(story) >= 1:
-        update_result = db.story.update_one(
-            {"story_id": story_id},
-            {"$set": story},            
-        )        
-
-        if update_result is not None:            
-            return Response(status_code=status.HTTP_204_NO_CONTENT)
-        else:
-            raise HTTPException(status_code=404, detail=f"Story {story_id} not found")
-    
-    # The update is empty, but we should still return the matching document:
-    if (existing_story := await db.story.find_one({"story_id": story_id})) is not None:
-        return existing_story
-    raise HTTPException(status_code=404, detail=f"Student {id} not found")
-
-@app.delete(
-    "/stories/{story_id}",
-    response_description="Delete a Story in the database"
-)
-async def delete_student(story_id: int):
-    """
-    Remove a single Story record from the database.
-    """
-    delete_result = db.story.delete_one({"story_id": story_id})
-
-    if delete_result.deleted_count == 1:
-        return Response(status_code=status.HTTP_204_NO_CONTENT)
-
-    raise HTTPException(status_code=404, detail=f"Story {story_id} not found")
-
 app.include_router(user_router, prefix="/user", tags=["user"])
 app.include_router(atividades_router, prefix="/atividade", tags=["atividades"])
-app.include_router(dev_router, prefix="/dev", tags=["dev"])
+#app.include_router(dev_router, prefix="/dev", tags=["dev"])
 
 if __name__ == "__main__":
     import uvicorn
