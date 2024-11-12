@@ -17,6 +17,27 @@ async def atividade(atividade: AtividadePost = Body(...)):
     nova_atividade = db.atividade.insert_one(atividade.dict())
     return {"message": "Atividade criada com sucesso", "id": str(nova_atividade.inserted_id)}
 
+@router.get("/atividade")
+async def get_atividade(atividade_id: str):
+    try:
+        atividade_obj_id = ObjectId(atividade_id)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail="Invalid atividade_id format")
+    
+    atividade = db.atividade.find_one({'_id': atividade_obj_id})
+    if not atividade:
+        raise HTTPException(status_code=404, detail="Atividade not found")
+    
+    atividade['_id'] = str(atividade['_id'])
+    return atividade
+
+@router.get("/atividades")
+async def get_atividades():
+    atividades = list(db.atividade.find({}))
+    for atividade in atividades:
+        atividade['_id'] = str(atividade['_id'])
+    return atividades
+
 class StoryAtividade(BaseModel):
     story_id: str
     atividades: List[str]

@@ -134,3 +134,4 @@ async def delete_student(story_id: int):
 
 app.include_router(user_router, prefix="/user", tags=["user"])
 app.include_router(atividades_router, prefix="/atividade", tags=["atividades"])
+app.include_router(dev_router, prefix="/dev", tags=["dev"])
