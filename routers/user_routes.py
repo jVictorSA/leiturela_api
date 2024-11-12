@@ -1,15 +1,23 @@
 from fastapi import APIRouter, HTTPException, Header
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from auth_utils import get_password_hash, verify_password, create_access_token, decode_token
 from mongo_conn import db 
 
 router = APIRouter()
 
 class CreateUser(BaseModel):
-    email: str
-    password: str
+    email: str = Field(..., example="user@example.com")
+    password: str = Field(..., example="strongpassword")
 
-@router.post("/register",)
+@router.post(
+    "/register",
+    summary="Register a new user",
+    description="Register a new user with an email and password.",
+    response_description="The user has been created successfully.",
+    responses={
+        400: {"description": "User already exists"}
+    }
+)
 async def create_user(user: CreateUser):
     existing_user = db.user.find_one({"email": user.email})
     if existing_user:
@@ -20,10 +28,18 @@ async def create_user(user: CreateUser):
     return {"message": "User created successfully"}
 
 class LoginUser(BaseModel):
-    email: str
-    password: str
+    email: str = Field(..., example="user@example.com")
+    password: str = Field(..., example="strongpassword")
 
-@router.post("/login")
+@router.post(
+    "/login",
+    summary="Login a user",
+    description="Login a user with an email and password.",
+    response_description="The access token for the user.",
+    responses={
+        400: {"description": "User not found or invalid password"}
+    }
+)
 async def login(user: LoginUser):
     existing_user = db.user.find_one({"email": user.email})
     if not existing_user:

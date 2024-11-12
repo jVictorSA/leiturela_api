@@ -20,7 +20,16 @@ from routers.user_routes import router as user_router
 from routers.atividades_routes import router as atividades_router
 from routers.dev_routes import router as dev_router
 
-app = FastAPI() 
+app = FastAPI(
+    title="Leiturela API",
+    description="API para gerenciamento de histórias e atividades",
+    version="1.0.0",
+    contact={
+        "name": "Seu Nome",
+        "url": "https://seusite.com",
+        "email": "seuemail@exemplo.com",
+    },
+)
 
 @app.get(
     "/stories/",
@@ -45,14 +54,12 @@ async def get_stories():
 )
 async def get_story_by_id(id: int):
     """
-    Get the record for a specific story, looked up by `id`.
+    List a single story by its ID.
     """
-    story = db.story.find_one({"story_id": id})
-
+    story = await db.story.find_one({"story_id": id})
     if story is not None:
         story["_id"] = str(story["_id"])
         return story
-
     raise HTTPException(status_code=404, detail=f"Story {id} not found")
 
 @app.post(
@@ -135,3 +142,7 @@ async def delete_student(story_id: int):
 app.include_router(user_router, prefix="/user", tags=["user"])
 app.include_router(atividades_router, prefix="/atividade", tags=["atividades"])
 app.include_router(dev_router, prefix="/dev", tags=["dev"])
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="127.0.0.1", port=8000)

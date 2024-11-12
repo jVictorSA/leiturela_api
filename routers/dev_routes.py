@@ -31,12 +31,7 @@ async def get_atividade(atividade_id: str):
     atividade['_id'] = str(atividade['_id'])
     return atividade
 
-@router.get("/atividades")
-async def get_atividades():
-    atividades = list(db.atividade.find({}))
-    for atividade in atividades:
-        atividade['_id'] = str(atividade['_id'])
-    return atividades
+
 
 class StoryAtividade(BaseModel):
     story_id: str

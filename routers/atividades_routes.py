@@ -1,14 +1,22 @@
-from fastapi import APIRouter, HTTPException, Header
-from pydantic import BaseModel
-from auth_utils import get_password_hash, verify_password, create_access_token, decode_token
-from mongo_conn import db  # Supondo que você tenha um módulo db para acessar o banco de dados
+from fastapi import APIRouter, HTTPException, Header, Body
+from pydantic import BaseModel, Field
+from auth_utils import decode_token
+from mongo_conn import db
 from datetime import datetime, timedelta
-from fastapi import FastAPI, HTTPException, Body, status, Header
 from bson import ObjectId
 
 router = APIRouter()
 
-@router.get("/relatorio")
+@router.get(
+    "/relatorio",
+    summary="Get user report",
+    description="Retrieve a report of user activities for the past week, including total time and number of correct answers.",
+    response_description="The user report.",
+    responses={
+        401: {"description": "Invalid or expired token"},
+        404: {"description": "No activities found for the user"}
+    }
+)
 async def relatorio(authorization: str = Header(...)):
     token = authorization
     payload = decode_token(token)
@@ -21,13 +29,22 @@ async def relatorio(authorization: str = Header(...)):
     num_acertos = sum([1 for entrega in entregas if entrega["correta"]])
     return {"entregas": entregas, "total_time": total_time, "num_acertos": num_acertos}
 
-
 class EntregaPost(BaseModel):
-    atividade_id: str
-    answer: dict
-    time: float
+    atividade_id: str = Field(..., example="60c72b2f9b1e8b3f4c8b4567")
+    answer: dict = Field(..., example={"question1": "answer1"})
+    time: float = Field(..., example=120.5)
 
-@router.post("/entrega")
+@router.post(
+    "/entrega",
+    summary="Submit an activity delivery",
+    description="Submit an activity delivery with the activity ID, answer, and time taken.",
+    response_description="The delivery has been successfully submitted.",
+    responses={
+        400: {"description": "Invalid atividade_id format"},
+        401: {"description": "Invalid or expired token"},
+        404: {"description": "Activity not found"}
+    }
+)
 async def entrega(authorization: str = Header(...), entrega: EntregaPost = Body(...)):
     token = authorization 
     payload = decode_token(token)
@@ -55,9 +72,6 @@ async def entrega(authorization: str = Header(...), entrega: EntregaPost = Body(
         "answer": entrega.answer
     }
 
-
-
-
 class AtividadeGet(BaseModel):
     atividade_id: str
 
@@ -74,3 +88,10 @@ async def get_atividade(atividade: AtividadeGet = Body(...)):
     
     atividade['_id'] = str(atividade['_id'])
     return atividade
+
+@router.get("/atividades")
+async def get_atividades():
+    atividades = list(db.atividade.find({}))
+    for atividade in atividades:
+        atividade['_id'] = str(atividade['_id'])
+    return atividades
