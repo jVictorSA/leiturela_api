@@ -4,6 +4,7 @@ from auth_utils import decode_token
 from mongo_conn import db
 from datetime import datetime, timedelta
 from bson import ObjectId
+from typing import List, Dict, Any
 
 router = APIRouter()
 
@@ -53,7 +54,7 @@ async def entrega(authorization: str = Header(...), entrega: EntregaPost = Body(
         atividade_obj_id = ObjectId(entrega.atividade_id)
     except Exception as e:
         raise HTTPException(status_code=400, detail="Invalid atividade_id format")
-    atividade = db.atividade.find_one({'_id': atividade_obj_id})
+    atividade = db.activities.find_one({'_id': atividade_obj_id})
     correta = (atividade["answer"] == entrega.answer)
     # colocar o id do usuário pelo payload do jwt
     new_entrega = {
@@ -67,7 +68,6 @@ async def entrega(authorization: str = Header(...), entrega: EntregaPost = Body(
     db.entrega.insert_one(new_entrega)
     return {
         "message": "Entrega realizada com sucesso", 
-        "payload": payload, 
         "atividade_id": entrega.atividade_id, 
         "answer": entrega.answer
     }
@@ -75,14 +75,14 @@ async def entrega(authorization: str = Header(...), entrega: EntregaPost = Body(
 class AtividadeGet(BaseModel):
     atividade_id: str
 
-@router.get("/atividade")
-async def get_atividade(atividade: AtividadeGet = Body(...)):
+@router.get("/atividade:{atividade_id}")
+async def get_atividade(atividade_id: str):
     try:
-        atividade_obj_id = ObjectId(atividade.atividade_id)
+        atividade_obj_id = ObjectId(atividade_id)
     except Exception as e:
         raise HTTPException(status_code=400, detail="Invalid atividade_id format")
     
-    atividade = db.atividade.find_one({'_id': atividade_obj_id})
+    atividade = db.activities.find_one({'_id': atividade_obj_id})
     if not atividade:
         raise HTTPException(status_code=404, detail="Atividade not found")
     
@@ -91,7 +91,47 @@ async def get_atividade(atividade: AtividadeGet = Body(...)):
 
 @router.get("/atividades")
 async def get_atividades():
-    atividades = list(db.atividade.find({}))
+    atividades = list(db.activities.find({}))
     for atividade in atividades:
         atividade['_id'] = str(atividade['_id'])
     return atividades
+
+@router.get("/story:{story_id}", response_model=Dict[str, Any])
+async def get_story(story_id: str, authorization: str = Header(None)):
+    """
+    Recupera uma história específica do banco de dados com base no `story_id` fornecido.
+
+    Parâmetros:
+    - story_id (str): O ID da história que voc�� deseja recuperar.
+    - authorization (str, opcional): Token JWT necessário para autenticação. Se não for fornecido, a resposta será `401 Unauthorized`.
+
+    Respostas:
+    - 200 OK: Retorna os detalhes da história.
+    - 400 Bad Request: O formato do `story_id` é inválido.
+    - 401 Unauthorized: O token de autorização não foi fornecido ou é inválido.
+    - 404 Not Found: A história com o `story_id` fornecido não foi encontrada.
+    """
+    if authorization is None:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    
+    token = authorization
+    payload = decode_token(token)
+
+    try:
+        story_obj_id = ObjectId(story_id)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail="Invalid story_id format")
+    
+    story = db.stories.find_one({'_id': story_obj_id})
+    if not story:
+        raise HTTPException(status_code=404, detail="Story not found")
+    
+    story['_id'] = str(story['_id'])
+    activities = []
+    for activity_id in story["activities"]:
+        activity_obj_id = ObjectId(activity_id)
+        activity = db.activities.find_one({'_id': activity_obj_id})
+        activity['_id'] = str(activity['_id'])
+        activities.append(activity)
+    story["activities"] = activities
+    return story
