@@ -8,7 +8,7 @@ from typing import Dict, Optional
 # Configurações
 SECRET_KEY = "sua_chave_secreta_aqui"  # Mude isso para uma chave secreta forte
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
+ACCESS_TOKEN_EXPIRE_MINUTES = 60*24  # 24 horas
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 security = HTTPBearer()

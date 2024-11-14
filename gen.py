@@ -6,7 +6,7 @@ import json
 from pydantic import BaseModel
 from typing import List, Dict
 from mongo_conn import db
-
+import random
 
 load_dotenv()
 os.environ["GOOGLE_API_KEY"]
@@ -101,18 +101,21 @@ def generate_activity(sub_story: str) -> dict:
     Returns:
         dict: A atividade gerada.
     """
+
+    tipos_json = [
+        {"type":"conta_letra","answer":{"num":5},"body":{"letra":"A","frase":"A arara azul voa alto sobre as árvores"}},
+        {"type":"desembaralha_palavra","answer":{"palavra":"casa"},"body":{"silabas":["ca","sa"]}},
+    ]
+    choice = random.choice(tipos_json)
+
     sys_template_str = """
-    Crie uma atividade no formato JSON do tipo "conta_letra" ou do tipo "desembaralha_palavra", 
-    escolha de maneira sortida, baseada, mas sem ser identica a seguinte frase:
+    Crie uma atividade no formato JSON do tipo {choice} baseada, mas sem ser identica a seguinte frase:
     {sub_story}
 
     A atividade deve incluir uma pergunta e uma resposta correta, escolha algum dos dos tipos de exemplo abaixo.
 
-    EXEMPLO do tipo "conta_letra": 
-    {{"type":"conta_letra","answer":{{"num":5}},"body":{{"letra":"A","frase":"A arara azul voa alto sobre as árvores"}}}}
-
-    EXEMPLO do tipo "desembaralha_palavra":
-    {{"type":"desembaralha_palavra","answer":{{"palavra":"casa"}},"body":{{"palavra":"saca"}}}}
+    EXEMPLO: 
+    {choice}
     Output:"""
 
     human_template_str = ""  # "{prompt_usuario}"
@@ -121,7 +124,7 @@ def generate_activity(sub_story: str) -> dict:
 
     session = prompt | llm
 
-    response = session.invoke({"sub_story": sub_story})
+    response = session.invoke({"sub_story": sub_story, "choice": choice})
     activity_str = response.content
 
     if not activity_str:
@@ -141,6 +144,10 @@ def generate_activity(sub_story: str) -> dict:
         print(f"Failed to decode JSON: {e}")
         print(f"Response content: {activity_str}")
         raise
+
+    if activity['type'] == 'conta_letra':
+        # contar as letras da frase
+        activity['answer']['num'] = activity['body']['frase'].lower().count(activity['body']['letra'].lower())
 
     return activity
 
