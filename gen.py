@@ -84,7 +84,16 @@ def generate_story_chunks(story: str) -> list:
     session = prompt | llm
 
     response = session.invoke({"story": story})
-    sub_stories_str = response.content
+    sub_stories_str = response.content.strip()
+
+    # remover aspas triplas e json
+    if sub_stories_str.startswith("```") and sub_stories_str.endswith("```"):
+        sub_stories_str = sub_stories_str[3:-3].strip()
+        print(f"Response content after removing triple quotes: {sub_stories_str}")
+    # remover a tag json
+    if sub_stories_str.startswith("json\n"):
+        print(f"Response content before JSON parsing: {sub_stories_str}")
+        sub_stories_str = sub_stories_str[5:]
 
     print(f"Response content before JSON parsing: {sub_stories_str}")
 
@@ -191,5 +200,11 @@ if __name__ == "__main__":
     print(story)
     
     sub_stories = generate_story_chunks(story)
-    atividade = [generate_activity(item) for item in sub_stories]
+    #atividade = [generate_activity(item) for item in sub_stories]
+    atividade = []
+    for item in sub_stories:
+        print("Sub-história:", item)
+        print("Digite o json da atividade:")
+        json_str = input()
+        atividade.append(json.loads(json_str))
     story_instance = Story.create_story(theme, story, sub_stories, atividade)

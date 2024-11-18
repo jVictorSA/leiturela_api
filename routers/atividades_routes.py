@@ -97,7 +97,7 @@ async def get_atividades():
     return atividades
 
 @router.get("/story:{story_id}", response_model=Dict[str, Any])
-async def get_story(story_id: str, authorization: str = Header(None)):
+async def get_story(authorization: str = Header(None), story_id: str = None):
     """
     Recupera uma história específica do banco de dados com base no `story_id` fornecido.
 
@@ -111,6 +111,7 @@ async def get_story(story_id: str, authorization: str = Header(None)):
     - 401 Unauthorized: O token de autorização não foi fornecido ou é inválido.
     - 404 Not Found: A história com o `story_id` fornecido não foi encontrada.
     """
+    print(authorization)
     if authorization is None:
         raise HTTPException(status_code=401, detail="Unauthorized")
     
