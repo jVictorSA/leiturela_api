@@ -92,6 +92,9 @@ def generate_story_chunks(story: str) -> list:
     response = session.invoke({"story": story})
     sub_stories_str = response.content.strip()
 
+    #remover <|file_separator|>
+    sub_stories_str = sub_stories_str.replace("<|file_separator|>", "")
+
     # remover aspas triplas e json
     if sub_stories_str.startswith("```") and sub_stories_str.endswith("```"):
         sub_stories_str = sub_stories_str[3:-3].strip()

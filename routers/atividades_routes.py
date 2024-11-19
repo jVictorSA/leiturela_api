@@ -32,7 +32,6 @@ async def relatorio(authorization: str = Header(...)):
 
 class EntregaPost(BaseModel):
     atividade_id: str = Field(..., example="60c72b2f9b1e8b3f4c8b4567")
-    answer: dict = Field(..., example={"question1": "answer1"})
     time: float = Field(..., example=120.5)
 
 @router.post(
@@ -55,12 +54,9 @@ async def entrega(authorization: str = Header(...), entrega: EntregaPost = Body(
     except Exception as e:
         raise HTTPException(status_code=400, detail="Invalid atividade_id format")
     atividade = db.activities.find_one({'_id': atividade_obj_id})
-    correta = (atividade["answer"] == entrega.answer)
     # colocar o id do usuário pelo payload do jwt
     new_entrega = {
         "atividade_id": entrega.atividade_id,
-        "answer": entrega.answer,
-        "correta": correta,
         "date": datetime.now(),
         "user_id": payload["id"],
         "time": entrega.time
