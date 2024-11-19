@@ -1,3 +1,9 @@
+import sys
+import os
+
+# Adiciona o diretório pai ao sys.path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.prompts import PromptTemplate
 import os

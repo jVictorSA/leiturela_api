@@ -9,8 +9,7 @@ router = APIRouter()
 class CreateUser(BaseModel):
     email: str = Field(..., example="user@example.com")
     password: str = Field(..., example="strongpassword")
-    username: str = Field(..., example="user")
-    birthdate: str = Field(..., example="2000-12-31")
+    name: str = Field(..., example="John Doe")
 
 @router.post(
     "/register",
@@ -29,18 +28,12 @@ async def create_user(user: CreateUser):
     existing_user = db.user.find_one({"username": user.username})
     if existing_user:
         raise HTTPException(status_code=400, detail="Username already exists")
-    
-    #check if the user is under 5 years old
-    birthdate = datetime.strptime(user.birthdate, "%Y-%m-%d")
-    if datetime.now() - birthdate < timedelta(days=5*365):
-        raise HTTPException(status_code=400, detail="User is under 5 years old")
 
     encripted_password = get_password_hash(user.password)
     db.user.insert_one({
         "email": user.email,
         "password": encripted_password,
-        "username": user.username,
-        "birthdate": user.birthdate
+        "name": user.name,
     })
     return {"message": "User created successfully"}
 
