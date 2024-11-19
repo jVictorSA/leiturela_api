@@ -10,7 +10,7 @@ class CreateUser(BaseModel):
     email: str = Field(..., example="user@example.com")
     password: str = Field(..., example="strongpassword")
     username: str = Field(..., example="user")
-    birthdate: str = Field(..., example="2000-01-01")
+    birthdate: str = Field(..., example="2000-12-31")
 
 @router.post(
     "/register",
