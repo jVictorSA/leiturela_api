@@ -49,10 +49,6 @@ async def entrega(authorization: str = Header(...), entrega: EntregaPost = Body(
     token = authorization 
     payload = decode_token(token)
 
-    try:
-        atividade_obj_id = ObjectId(entrega.atividade_id)
-    except Exception as e:
-        raise HTTPException(status_code=400, detail="Invalid atividade_id format")
     # colocar o id do usuário pelo payload do jwt
     new_entrega = {
         "atividade_id": entrega.atividade_id,
@@ -64,7 +60,6 @@ async def entrega(authorization: str = Header(...), entrega: EntregaPost = Body(
     return {
         "message": "Entrega realizada com sucesso", 
         "atividade_id": entrega.atividade_id, 
-        "answer": entrega.answer
     }
 
 class AtividadeGet(BaseModel):
