@@ -24,10 +24,6 @@ async def create_user(user: CreateUser):
     existing_user = db.user.find_one({"email": user.email})
     if existing_user:
         raise HTTPException(status_code=400, detail="User already exists")
-    
-    existing_user = db.user.find_one({"username": user.username})
-    if existing_user:
-        raise HTTPException(status_code=400, detail="Username already exists")
 
     encripted_password = get_password_hash(user.password)
     db.user.insert_one({
