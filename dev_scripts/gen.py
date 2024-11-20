@@ -10,7 +10,7 @@ import os
 from dotenv import load_dotenv
 import json
 from pydantic import BaseModel
-from typing import List, Dict
+from typing import List, Dict, Optional
 from mongo_conn import db
 import random
 
@@ -96,6 +96,8 @@ def generate_story_chunks(story: str) -> list:
     sub_stories_str = sub_stories_str.replace("<|file_separator|>", "")
 
     # remover aspas triplas e json
+    sub_stories_str = sub_stories_str.replace("```json\n", "")
+    sub_stories_str = sub_stories_str.replace("```", "")
     if sub_stories_str.startswith("```") and sub_stories_str.endswith("```"):
         sub_stories_str = sub_stories_str[3:-3].strip()
         print(f"Response content after removing triple quotes: {sub_stories_str}")
@@ -171,7 +173,7 @@ def generate_activity(sub_story: str) -> dict:
 
 class Atividade(BaseModel):
     type: str
-    answer: dict
+    answer: Optional[dict] = None
     body: dict
 
 class Story(BaseModel):

@@ -53,7 +53,6 @@ async def entrega(authorization: str = Header(...), entrega: EntregaPost = Body(
         atividade_obj_id = ObjectId(entrega.atividade_id)
     except Exception as e:
         raise HTTPException(status_code=400, detail="Invalid atividade_id format")
-    atividade = db.activities.find_one({'_id': atividade_obj_id})
     # colocar o id do usuário pelo payload do jwt
     new_entrega = {
         "atividade_id": entrega.atividade_id,
