@@ -19,7 +19,7 @@ router = APIRouter()
     }
 )
 async def relatorio(authorization: str = Header(...)):
-    token = authorization
+    token = authorization.split(" ")[1]
     payload = decode_token(token)
     user_id = payload["id"]
     # filtrar por a data de nao mais antiga que uma semana
