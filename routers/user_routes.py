@@ -55,4 +55,6 @@ async def login(user: LoginUser):
         raise HTTPException(status_code=400, detail="Invalid password")
     
     access_token = create_access_token(data={"id": str(existing_user["_id"])})
-    return {"access_token": access_token}
+    return {"access_token": access_token,
+            "user_id": str(existing_user["_id"]),
+    }
