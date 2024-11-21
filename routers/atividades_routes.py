@@ -23,11 +23,11 @@ async def relatorio(authorization: str = Header(...)):
     payload = decode_token(token)
     user_id = payload["id"]
     # filtrar por a data de nao mais antiga que uma semana
-    entregas = list(db.entrega.find({"user_id": user_id, "date": {"$gte": datetime.now() - timedelta(days=7)}}))
+    entregas = (list(db.entrega.find({"user_id": user_id, "date": {"$gte": datetime.now() - timedelta(days=7)}})))
     # retornar a soma do tempo de cada entrega
     total_time = sum([entrega["time"] for entrega in entregas])
     # contar o número de acertos
-    return {"entregas": entregas, "total_time": total_time}
+    return {"entregas": len(entregas), "total_time": total_time}
 
 class EntregaPost(BaseModel):
     atividade_id: str = Field(..., example="60c72b2f9b1e8b3f4c8b4567")
