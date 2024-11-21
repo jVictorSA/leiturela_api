@@ -27,8 +27,7 @@ async def relatorio(authorization: str = Header(...)):
     # retornar a soma do tempo de cada entrega
     total_time = sum([entrega["time"] for entrega in entregas])
     # contar o número de acertos
-    num_acertos = sum([1 for entrega in entregas if entrega["correta"]])
-    return {"entregas": entregas, "total_time": total_time, "num_acertos": num_acertos}
+    return {"entregas": entregas, "total_time": total_time}
 
 class EntregaPost(BaseModel):
     atividade_id: str = Field(..., example="60c72b2f9b1e8b3f4c8b4567")
