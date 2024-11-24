@@ -57,4 +57,5 @@ async def login(user: LoginUser):
     access_token = create_access_token(data={"id": str(existing_user["_id"])})
     return {"access_token": access_token,
             "user_id": str(existing_user["_id"]),
+            "name": existing_user["name"],
     }
