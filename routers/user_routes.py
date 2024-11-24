@@ -43,19 +43,26 @@ class LoginUser(BaseModel):
     description="Login a user with an email and password.",
     response_description="The access token for the user.",
     responses={
-        400: {"description": "User not found or invalid password"}
+        400: {"description": "User not found or invalid password"},
+        500: {"description": "Internal server error"}
     }
 )
 async def login(user: LoginUser):
-    existing_user = db.user.find_one({"email": user.email})
-    if not existing_user:
-        raise HTTPException(status_code=400, detail="User not found")
-    
-    if not verify_password(user.password, existing_user["password"]):
-        raise HTTPException(status_code=400, detail="Invalid password")
-    
-    access_token = create_access_token(data={"id": str(existing_user["_id"])})
-    return {"access_token": access_token,
+    try:
+        existing_user = db.user.find_one({"email": user.email})
+        if not existing_user:
+            raise HTTPException(status_code=400, detail="User not found")
+        
+        if not verify_password(user.password, existing_user["password"]):
+            raise HTTPException(status_code=400, detail="Invalid password")
+        
+        access_token = create_access_token(data={"id": str(existing_user["_id"])})
+        return {
+            "access_token": access_token,
             "user_id": str(existing_user["_id"]),
             "name": existing_user["name"],
-    }
+        }
+    except HTTPException as http_exc:
+        raise http_exc
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
